@@ -3,6 +3,7 @@
 # dependencies
 /node_modules
 /todo-list/node_modules
+/redux-counter/node_modules
 
 # testing
 /coverage
