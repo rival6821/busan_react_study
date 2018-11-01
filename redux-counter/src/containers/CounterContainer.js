@@ -28,14 +28,14 @@ export function getRandomColor(){
 //state와 props연결
 
 const mapStateToProps = (state)=>({
-    color:state.color,
-    number:state.number
+    color : state.colorData.color,
+    number : state.numberData.number
 });
 
 //dispatch를 파라미터로 받아 액션을 디스패치하는 함수들을 객체안에 넣어서 반환
 const mapDispatchToProps = (dispatch)=>({
     onIncrement:()=>dispatch(actions.increment()),
-    onDevrement:()=>dispatch(actions.decrement()),
+    onDecrement:()=>dispatch(actions.decrement()),
     onSetColor:()=>{
         const color = getRandomColor();
         dispatch(actions.setColor(color));
