@@ -4,6 +4,7 @@ import {Route} from 'react-router-dom';
 import{Home,About,Posts} from 'pages';
 import Menu from 'components/Menu';
 
+
 const App = () =>{
     return(
         <div>
