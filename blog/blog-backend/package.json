@@ -4,19 +4,23 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
+    "dotenv": "^6.1.0",
     "event-stream": "^4.0.1",
+    "joi": "^14.0.6",
     "koa": "^2.6.2",
     "koa-bodyparser": "^4.2.1",
-    "koa-router": "^7.4.0"
+    "koa-router": "^7.4.0",
+    "mongoose": "^5.3.12"
   },
   "devDependencies": {
+    "cross-env": "^5.2.0",
     "eslint": "^5.9.0",
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-plugin-import": "^2.14.0",
     "nodemon": "^1.18.6"
   },
   "scripts": {
-    "start": "node src",
-    "start:dev": "nodemon --watch src/ src/index.js"
+    "start": "cross-env NODE_PATH=src node src",
+    "start:dev": "cross-env NODE_PATH=src nodemon --watch src/ src/index.js"
   }
 }

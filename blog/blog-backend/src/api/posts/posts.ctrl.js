@@ -1,106 +1,119 @@
-let postId = 1; //  ID초기값
+const { ObjectId } = require('mongoose').Types;
 
-const posts = [
-    {
-        id: 1,
-        title: '제목',
-        body: '내용'
-    }
-];
-
-//  포스트작성
-//  POST /api/posts
-//  { title, body }
-exports.write = (ctx) => {
-    const { title, body } = ctx.request.body;
-
-    postId += 1;
-
-    const post = { id: postId, title, body };
-    posts.push(post);
-    ctx.body = post;
-};
-
-//  포스트 목록조회
-//  GET /api/posts
-exports.list = (ctx) => {
-    ctx.body = posts;
-};
-
-//  특정 포스트 조회
-//  GET /api/posts/:id
-exports.read = (ctx) => {
+exports.checkObjectId = (ctx, next) => {
     const { id } = ctx.params;
 
-    const post = posts.find(p => p.id.toString() === id);
+    if(!ObjectId.isValid(id)){
+        ctx.status = 400;
+        return null;
+    }
+    return next();
+}
 
-    if (!posts) {
-        ctx.status = 404;
-        ctx.body = {
-            message: '포스트가 존재하지 않습니다'
-        };
+const Post = require('models/post');
+const Joi = require('Joi');
+
+//  POST /api/posts
+//  { title, body, tags }
+exports.write = async (ctx) => {
+    
+    const schema = Joi.object().keys({
+        title: Joi.string().required(),
+        body : Joi.string().required(),
+        tags: Joi.array().items(Joi.string().required())
+    });
+
+    const result = Joi.validate(ctx.request.body, schema);
+
+    if(result.error){
+        ctx.status = 400;
+        ctx.body = result.error;
         return;
     }
 
-    ctx.body = post;
+    const { title, body, tags } = ctx.request.body;
+
+    const post = new Post({
+        title, body, tags
+    });
+
+    try {
+        await post.save();
+        ctx.body = post;
+    } catch(e) {
+        ctx.throw(e, 500);
+    }
 };
 
-//  특정 포스트 제거
-// DELETE /api/posts/:id
-exports.remove = (ctx) => {
-    const { id } = ctx.params;
-
-    const index = posts.find(p => p.id.toString() === id);
-
-    if (index === -1) {
-        ctx.status = 404;
-        ctx.body = {
-            message: '포스트가 존재하지 않습니다'
-        };
+//  GET /api/posts
+exports.list = async (ctx) => {
+    const page = parseInt(ctx.query.page || 1, 10);
+    if(page<1){
+        ctx.status = 400;
+        return;
     }
 
-    posts.splice(index, 1);
-    ctx.status = 204;
+    try {
+        const posts = await Post.find()
+            .sort({_id: -1})
+            .limit(10)
+            .skip((page-1) * 10)
+            .lean()
+            .exec();
+        const postCount = await Post.count().exec();
+        const limitBodyLength = post => ({
+            ...post,
+            body: post.body.length < 200 ? post.body : `${post.body.slice(0, 200)}...`
+        });
+        ctx.body = posts.map(limitBodyLength);
+        ctx.set('Last-Page', Math.ceil(postCount / 10));
+    } catch(e) {
+        ctx.throw(e, 500);
+    }
 };
 
-//  특정 포스트 수정(전체)
-// PUT /api/posts/:id
-exports.replace = (ctx) => {
+//  GET /api/posts/:id
+exports.read = async (ctx) => {
     const { id } = ctx.params;
-
-    const index = posts.find(p => p.id.toString() === id);
-
-    if (index === -1) {
-        ctx.status = 404;
-        ctx.body = {
-            message: '포스트가 존재하지 않습니다'
-        };
+    try{
+        const post = await Post.findById(id).exec();
+        if(!post){
+            ctx.status = 404;
+            return;
+        }
+        ctx.body = post;
+    } catch(e) {
+        ctx.throw(e, 500);
     }
-
-    posts[index] = {
-        id,
-        ...ctx.request.body
-    };
-    ctx.body = posts[index];
 };
 
-//  포스트 수정(일부)
-// PATCH /api/posts/:id
-exports.update = (ctx) => {
+//  DELETE /api/posts/:id
+exports.remove = async (ctx) => {
     const { id } = ctx.params;
-
-    const index = posts.find(p => p.id.toString() === id);
-
-    if (index === -1) {
-        ctx.status = 404;
-        ctx.body = {
-            message: '포스트가 존재하지 않습니다'
-        };
+    try {
+        await Post.findByIdAndDelete(id).exec();
+        ctx.status = 204;
+    } catch(e) {
+        ctx.throw(e, 500);
     }
+};
 
-    posts[index] = {
-        ...posts[index],
-        ...ctx.request.body
-    };
-    ctx.body = posts[index];
+
+//  PATCH /api/posts/:id
+//  { title, body, tags }
+exports.update = async (ctx) => {
+    const { id } = ctx.params;
+    try {
+        const post = await Post.findByIdAndUpdate(id, ctx.request.body, {
+            new: true
+            //업데이트된 객체를 반환하기 위함임
+        }).exec();
+        if(!post){
+            ctx.status = 404;
+            return;
+        }
+        ctx.body = post;
+    } catch(e) {
+        ctx.throw(e, 500);
+    }
 };
