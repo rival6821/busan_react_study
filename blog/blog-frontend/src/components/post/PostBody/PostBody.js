@@ -7,8 +7,10 @@ const cx = classNames.bind(styles);
 
 
 const PostBody = () => (
-  <div>
-    PostBody
+  <div className={cx('post-body')}>
+    <div className={(cx('paper'))}>
+      내용
+    </div>
   </div>
 );
 
