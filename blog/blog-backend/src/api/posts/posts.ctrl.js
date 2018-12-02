@@ -67,6 +67,7 @@ exports.list = async (ctx) => {
         });
         ctx.body = posts.map(limitBodyLength);
         ctx.set('Last-Page', Math.ceil(postCount / 10));
+        ctx.body = posts;
     } catch(e) {
         ctx.throw(e, 500);
     }
