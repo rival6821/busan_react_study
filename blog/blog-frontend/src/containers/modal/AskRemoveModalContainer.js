@@ -13,7 +13,16 @@ class AskRemoveModalContainer extends Component {
   }
 
   handleConfirm = async () => {
+    const { BaseActions, PostActions, history, match } = this.props;
+    const { id } = match.params;
 
+    try{
+      await PostActions.removePost(id);
+      BaseActions.hideModal('remove');
+      history.push('/');
+    } catch(e) {
+      console.log(e);
+    }
   }
 
 
@@ -35,4 +44,4 @@ export default connect(
     BaseActions: bindActionCreators(baseActions, dispatch),
     PostActions: bindActionCreators(postActions, dispatch)
   })
-)(AskRemoveModalContainer);
+)(withRouter(AskRemoveModalContainer));
