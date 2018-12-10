@@ -128,3 +128,12 @@ exports.update = async (ctx) => {
         ctx.throw(e, 500);
     }
 };
+
+exports.checkLogin = (ctx,next) => {
+    if(!ctx.session.logged){
+        ctx.status = 404;
+        return null;
+    }else{
+        return next();
+    }
+};
