@@ -114,7 +114,19 @@ module.exports = {
   // You can exclude the *.map files from the build during deployment.
   devtool: shouldUseSourceMap ? 'source-map' : false,
   // In production, we only want to load the app code.
-  entry: [paths.appIndexJs],
+  entry: {
+    app: paths.appIndexJs,
+    vendor: [
+      require.resolve('./polyfills'),
+      'react',
+      'react-dom',
+      'react-router-dom',
+      'redux',
+      'axios',
+      'codemirror',
+      'prismjs'
+    ],
+  },
   output: {
     // The build folder.
     path: paths.appBuild,
@@ -235,6 +247,13 @@ module.exports = {
       // please link the files into your node_modules/ and let module-resolution kick in.
       // Make sure your source files are compiled, as they will not be processed in any way.
       new ModuleScopePlugin(paths.appSrc, [paths.appPackageJson]),
+      new webpack.optimize.CommonsChunkPlugin({
+        name: 'vendor',
+      }),
+      new webpack.NormalModuleReplacementPlugin(
+        /^pages$/,
+        'pages/index.async.js'
+      ),
     ],
   },
   resolveLoader: {
@@ -376,13 +395,12 @@ module.exports = {
           {
             test: sassRegex,
             exclude: sassModuleRegex,
-            loader: getStyleLoaders(
-              {
-                importLoaders: 2,
-                sourceMap: shouldUseSourceMap,
-              },
-              'sass-loader'
-            ),
+            use: getStyleLoaders({ importLoaders: 2 }).concat({
+              loader: require.resolve('sass-loader'),
+              options: {
+                includePaths: [paths.appSrc + '/styles']
+              }
+            }),
             // Don't consider CSS imports dead code even if the
             // containing package claims to have no side effects.
             // Remove this when webpack adds a warning or an error for this.

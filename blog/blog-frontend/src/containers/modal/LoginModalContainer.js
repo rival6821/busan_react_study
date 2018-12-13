@@ -10,6 +10,7 @@ class LoginModalContainer extends Component {
         try{
             await BaseActions.login(password);
             BaseActions.hideModal('login');
+            localStorage.logged = "true";
         }catch(e){
             console.log(e);
         }
